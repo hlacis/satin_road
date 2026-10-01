@@ -1,0 +1,19 @@
+# .NET build files
+**/bin/
+**/obj/
+
+# JetBrains Rider
+.idea/
+**/.idea/
+
+# Node / Bun
+**/node_modules/
+**/dist/
+
+# Local environment variables / secrets
+.env
+.env.*
+!.env.example
+
+# macOS
+.DS_Store
