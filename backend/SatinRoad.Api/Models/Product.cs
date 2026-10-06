@@ -22,5 +22,7 @@ public class Product
     public int CategoryId { get; set; }
     [Column]
     public string Condition { get; set; } = string.Empty;
+    [Column]
+    public bool IsActive { get; set; }
     
 }
