@@ -32,4 +32,69 @@ Content-Type: application/json
 
 DELETE http://localhost:5234/api/products/2
 
+###
+POST http://localhost:5234/api/purchases
+Content-Type: application/json
 
+{
+  "buyerId": 2,
+  "productId": 1,
+  "quantity": 2
+}
+
+###
+
+POST http://localhost:5234/api/purchases
+Content-Type: application/json
+
+{
+  "buyerId": 2,
+  "productId": 1,
+  "quantity": 1
+}
+
+###
+
+POST http://localhost:5234/api/purchases
+Content-Type: application/json
+
+{
+  "buyerId": 2,
+  "productId": 1,
+  "quantity": 1
+}
+
+###
+
+GET http://localhost:5234/api/products
+
+###
+
+POST http://localhost:5234/api/products
+Content-Type: application/json
+
+{
+  "name": "FBI Test Product",
+  "description": "This should not be created",
+  "price": 50.00,
+  "stock": 10,
+  "vendorId": 1,
+  "categoryId": 1,
+  "condition": "New",
+  "isActive": true
+}
+
+###
+
+POST http://localhost:5234/api/purchases
+Content-Type: application/json
+
+{
+  "buyerId": 2,
+  "productId": 1,
+  "quantity": 1
+}
+
+###
+
+GET http://localhost:5234/api/products

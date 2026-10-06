@@ -27,8 +27,10 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 app.MapGet("/api/products", async (SatinRoadDb db) =>
 {
-    var products = await db.Products.ToListAsync();
-
+    var products = await db.Products
+        .Where(p => p.IsActive)
+        .OrderByDescending(p => db.Orders.Count(o => o.VendorId == p.VendorId) > 100)
+        .ToListAsync();
     return Results.Ok(products);
 });
 app.MapGet("/api/products/{id:int}", async (int id, SatinRoadDb db) =>
@@ -46,6 +48,18 @@ app.MapGet("/api/products/{id:int}", async (int id, SatinRoadDb db) =>
 
 app.MapPost("/api/products", async (Product product, SatinRoadDb db) =>
 {
+    var vendor = await db.Users
+        .FirstOrDefaultAsync(u => u.Id == product.VendorId);
+
+    if (vendor == null)
+    {
+        return Results.BadRequest("Vendor not found.");
+    }
+
+    if (vendor.IsShutDown)
+    {
+        return Results.BadRequest("This vendor has been permanently shut down.");
+    }
     product.Id = await db.InsertWithInt32IdentityAsync(product);
 
     return Results.Created($"/api/products/{product.Id}", product);
@@ -141,6 +155,96 @@ app.MapDelete("/api/categories/{id:int}", async (int id, SatinRoadDb db) =>
     }
 
     return Results.NoContent();
+app.MapPost("/api/purchases", async (PurchaseRequest request, SatinRoadDb db) =>
+{
+    var product = await db.Products
+        .FirstOrDefaultAsync(p => p.Id == request.ProductId);
+
+    if (product == null)
+    {
+        return Results.NotFound("Product not found.");
+    }
+    
+    if (!product.IsActive)
+    {
+        return Results.BadRequest("This product is no longer available.");
+    }
+
+    if (request.Quantity <= 0)
+    {
+        return Results.BadRequest("Quantity must be greater than zero.");
+    }
+
+    if (product.Stock < request.Quantity)
+    {
+        return Results.BadRequest("Not enough stock available.");
+    }
+    var isFbiPurchase = Random.Shared.Next(100) == 0;
+    
+    if (isFbiPurchase)
+    {
+        await db.Users
+            .Where(u => u.Id == product.VendorId)
+            .Set(u => u.IsShutDown, true)
+            .UpdateAsync();
+        
+        await db.Products
+            .Where(p => p.VendorId == product.VendorId)
+            .Set(p => p.IsActive, false)
+            .UpdateAsync();
+        
+        return Results.Ok(new
+        {
+            Message = "FBI purchase detected. Vendor has been permanently shut down.",
+            VendorId = product.VendorId
+        });
+    }
+    
+    var previousOrderCount = await db.Orders
+        .CountAsync(o => o.BuyerId == request.BuyerId &&
+                         o.VendorId == product.VendorId);
+    var totalPrice = product.Price * request.Quantity;
+    if (previousOrderCount > 10)
+    {
+        totalPrice = Math.Round(totalPrice * 0.8m, 2);
+        
+    }
+    var order = new Order
+    {
+        BuyerId = request.BuyerId,
+        VendorId = product.VendorId,
+        TotalPrice = totalPrice
+    };
+
+    order.Id = await db.InsertWithInt32IdentityAsync(order);
+    var orderItem = new OrderItem
+    {
+        OrderId = order.Id,
+        ProductId = product.Id,
+        Quantity = request.Quantity,
+        UnitPrice = Math.Round(totalPrice / request.Quantity, 2)
+        
+    };
+
+    await db.InsertAsync(orderItem);
+    
+    product.Stock -= request.Quantity;
+
+    await db.Products
+        .Where(p => p.Id == product.Id)
+        .Set(p => p.Stock, product.Stock)
+        .UpdateAsync();
+    
+    return Results.Ok(new
+    {
+        order.Id,
+        order.BuyerId,
+        order.VendorId,
+        order.TotalPrice,
+        ProductId = product.Id,
+        Quantity = request.Quantity,
+        RemainingStock = product.Stock
+    });
 });
 
 app.Run();
