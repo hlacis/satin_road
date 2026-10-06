@@ -155,6 +155,8 @@ app.MapDelete("/api/categories/{id:int}", async (int id, SatinRoadDb db) =>
     }
 
     return Results.NoContent();
+});
+
 app.MapPost("/api/purchases", async (PurchaseRequest request, SatinRoadDb db) =>
 {
     var product = await db.Products
