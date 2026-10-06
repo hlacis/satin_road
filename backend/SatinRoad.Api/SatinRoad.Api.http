@@ -1,6 +1,33 @@
-@SatinRoad.Api_HostAddress = http://localhost:5234
+POST http://localhost:5234/api/products
+Content-Type: application/json
 
-GET {{SatinRoad.Api_HostAddress}}/weatherforecast/
-Accept: application/json
+{
+  "name": "Second Test Product",
+  "description": "Created through our API",
+  "price": 149.99,
+  "stock": 5,
+  "vendorId": 1,
+  "categoryId": 1,
+  "condition": "Used"
+}
 
 ###
+
+PUT http://localhost:5234/api/products/2
+Content-Type: application/json
+
+{
+  "name": "Updated Product",
+  "description": "This product was updated through our API",
+  "price": 199.99,
+  "stock": 3,
+  "vendorId": 1,
+  "categoryId": 1,
+  "condition": "Like New"
+}
+
+###
+
+DELETE http://localhost:5234/api/products/2
+
+
