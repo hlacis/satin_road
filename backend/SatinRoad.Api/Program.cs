@@ -86,4 +86,61 @@ app.MapDelete("/api/products/{id:int}", async (int id, SatinRoadDb db) =>
     return Results.NoContent();
 });
 
+//Category endpoints
+app.MapGet("/api/categories", async (SatinRoadDb db) =>
+{
+    var categories = await db.Categories.ToListAsync();
+
+    return Results.Ok(categories);
+});
+
+app.MapGet("/api/categories/{id:int}", async (int id, SatinRoadDb db) =>
+{
+    var category = await db.Categories
+        .FirstOrDefaultAsync(c => c.Id == id);
+
+    if (category == null)
+    {
+        return Results.NotFound();
+    }
+
+    return Results.Ok(category);
+});
+
+app.MapPost("/api/categories", async (Category category, SatinRoadDb db) =>
+{
+    category.Id = await db.InsertWithInt32IdentityAsync(category);
+
+    return Results.Created($"/api/categories/{category.Id}", category);
+});
+
+app.MapPut("/api/categories/{id:int}", async (int id, Category updatedCategory, SatinRoadDb db) =>
+{
+    var affectedRows = await db.Categories
+        .Where(c => c.Id == id)
+        .Set(c => c.Name, updatedCategory.Name)
+        .UpdateAsync();
+
+    if (affectedRows == 0)
+    {
+        return Results.NotFound();
+    }
+
+    return Results.NoContent();
+});
+
+app.MapDelete("/api/categories/{id:int}", async (int id, SatinRoadDb db) =>
+{
+    var affectedRows = await db.Categories
+        .Where(c => c.Id == id)
+        .DeleteAsync();
+
+    if (affectedRows == 0)
+    {
+        return Results.NotFound();
+    }
+
+    return Results.NoContent();
+});
+
 app.Run();
