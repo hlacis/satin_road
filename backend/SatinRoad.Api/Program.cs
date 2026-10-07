@@ -2,6 +2,7 @@ using LinqToDB;
 using LinqToDB.Async;
 using SatinRoad.Api.Data;
 using SatinRoad.Api.Models;
+using SatinRoad.Api.Services;
 
 
 
@@ -12,6 +13,10 @@ var connectionString = builder.Configuration.GetConnectionString("SatinRoad")
 
 builder.Services.AddScoped<SatinRoadDb>(_ =>
     new SatinRoadDb(connectionString));
+
+builder.Services.AddScoped<CategoryService>();
+builder.Services.AddScoped<ProductService>();
+builder.Services.AddScoped<PurchaseService>();
 
 // Add services to the container.
 builder.Services.AddOpenApi();
@@ -25,18 +30,19 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-app.MapGet("/api/products", async (SatinRoadDb db) =>
+
+
+// Product endpoints
+app.MapGet("/api/products", async (ProductService service) =>
 {
-    var products = await db.Products
-        .Where(p => p.IsActive)
-        .OrderByDescending(p => db.Orders.Count(o => o.VendorId == p.VendorId) > 100)
-        .ToListAsync();
+    var products = await service.GetAllProducts();
+
     return Results.Ok(products);
 });
-app.MapGet("/api/products/{id:int}", async (int id, SatinRoadDb db) =>
+
+app.MapGet("/api/products/{id:int}", async (int id, ProductService service) =>
 {
-    var product = await db.Products
-        .FirstOrDefaultAsync(p => p.Id == id);
+    var product = await service.GetProductById(id);
 
     if (product == null)
     {
@@ -46,39 +52,23 @@ app.MapGet("/api/products/{id:int}", async (int id, SatinRoadDb db) =>
     return Results.Ok(product);
 });
 
-app.MapPost("/api/products", async (Product product, SatinRoadDb db) =>
+app.MapPost("/api/products", async (Product product, ProductService service) =>
 {
-    var vendor = await db.Users
-        .FirstOrDefaultAsync(u => u.Id == product.VendorId);
+    var createdProduct = await service.CreateProduct(product);
 
-    if (vendor == null)
+    if (createdProduct == null)
     {
-        return Results.BadRequest("Vendor not found.");
+        return Results.BadRequest("Vendor not found or has been permanently shut down.");
     }
 
-    if (vendor.IsShutDown)
-    {
-        return Results.BadRequest("This vendor has been permanently shut down.");
-    }
-    product.Id = await db.InsertWithInt32IdentityAsync(product);
-
-    return Results.Created($"/api/products/{product.Id}", product);
+    return Results.Created($"/api/products/{createdProduct.Id}", createdProduct);
 });
 
-app.MapPut("/api/products/{id:int}", async (int id, Product updatedProduct, SatinRoadDb db) =>
+app.MapPut("/api/products/{id:int}", async (int id, Product product, ProductService service) =>
 {
-    var affectedRows = await db.Products
-        .Where(p => p.Id == id)
-        .Set(p => p.Name, updatedProduct.Name)
-        .Set(p => p.Description, updatedProduct.Description)
-        .Set(p => p.Price, updatedProduct.Price)
-        .Set(p => p.Stock, updatedProduct.Stock)
-        .Set(p => p.VendorId, updatedProduct.VendorId)
-        .Set(p => p.CategoryId, updatedProduct.CategoryId)
-        .Set(p => p.Condition, updatedProduct.Condition)
-        .UpdateAsync();
+    var updated = await service.UpdateProduct(id, product);
 
-    if (affectedRows == 0)
+    if (!updated)
     {
         return Results.NotFound();
     }
@@ -86,13 +76,11 @@ app.MapPut("/api/products/{id:int}", async (int id, Product updatedProduct, Sati
     return Results.NoContent();
 });
 
-app.MapDelete("/api/products/{id:int}", async (int id, SatinRoadDb db) =>
+app.MapDelete("/api/products/{id:int}", async (int id, ProductService service) =>
 {
-    var affectedRows = await db.Products
-        .Where(p => p.Id == id)
-        .DeleteAsync();
+    var deleted = await service.DeleteProduct(id);
 
-    if (affectedRows == 0)
+    if (!deleted)
     {
         return Results.NotFound();
     }
@@ -100,18 +88,16 @@ app.MapDelete("/api/products/{id:int}", async (int id, SatinRoadDb db) =>
     return Results.NoContent();
 });
 
-//Category endpoints
-app.MapGet("/api/categories", async (SatinRoadDb db) =>
+// Category endpoints
+app.MapGet("/api/categories", async (CategoryService service) =>
 {
-    var categories = await db.Categories.ToListAsync();
-
+    var categories = await service.GetAllCategories();
     return Results.Ok(categories);
 });
 
-app.MapGet("/api/categories/{id:int}", async (int id, SatinRoadDb db) =>
+app.MapGet("/api/categories/{id:int}", async (int id, CategoryService service) =>
 {
-    var category = await db.Categories
-        .FirstOrDefaultAsync(c => c.Id == id);
+    var category = await service.GetCategoryById(id);
 
     if (category == null)
     {
@@ -121,21 +107,18 @@ app.MapGet("/api/categories/{id:int}", async (int id, SatinRoadDb db) =>
     return Results.Ok(category);
 });
 
-app.MapPost("/api/categories", async (Category category, SatinRoadDb db) =>
+app.MapPost("/api/categories", async (Category category, CategoryService service) =>
 {
-    category.Id = await db.InsertWithInt32IdentityAsync(category);
+    var createdCategory = await service.CreateCategory(category);
 
-    return Results.Created($"/api/categories/{category.Id}", category);
+    return Results.Created($"/api/categories/{createdCategory.Id}", createdCategory);
 });
 
-app.MapPut("/api/categories/{id:int}", async (int id, Category updatedCategory, SatinRoadDb db) =>
+app.MapPut("/api/categories/{id:int}", async (int id, Category category, CategoryService service) =>
 {
-    var affectedRows = await db.Categories
-        .Where(c => c.Id == id)
-        .Set(c => c.Name, updatedCategory.Name)
-        .UpdateAsync();
+    var updated = await service.UpdateCategory(id, category);
 
-    if (affectedRows == 0)
+    if (!updated)
     {
         return Results.NotFound();
     }
@@ -143,13 +126,11 @@ app.MapPut("/api/categories/{id:int}", async (int id, Category updatedCategory, 
     return Results.NoContent();
 });
 
-app.MapDelete("/api/categories/{id:int}", async (int id, SatinRoadDb db) =>
+app.MapDelete("/api/categories/{id:int}", async (int id, CategoryService service) =>
 {
-    var affectedRows = await db.Categories
-        .Where(c => c.Id == id)
-        .DeleteAsync();
+    var deleted = await service.DeleteCategory(id);
 
-    if (affectedRows == 0)
+    if (!deleted)
     {
         return Results.NotFound();
     }
@@ -157,86 +138,38 @@ app.MapDelete("/api/categories/{id:int}", async (int id, SatinRoadDb db) =>
     return Results.NoContent();
 });
 
-app.MapPost("/api/purchases", async (PurchaseRequest request, SatinRoadDb db) =>
+// Purchase endpoint
+app.MapPost("/api/purchases", async (PurchaseRequest request, PurchaseService service) =>
 {
-    var product = await db.Products
-        .FirstOrDefaultAsync(p => p.Id == request.ProductId);
+    var product = await service.GetAvailableProduct(
+        request.ProductId,
+        request.Quantity);
 
     if (product == null)
     {
-        return Results.NotFound("Product not found.");
-    }
-    
-    if (!product.IsActive)
-    {
-        return Results.BadRequest("This product is no longer available.");
+        return Results.BadRequest("Product is not available or there is not enough stock.");
     }
 
-    if (request.Quantity <= 0)
-    {
-        return Results.BadRequest("Quantity must be greater than zero.");
-    }
+    var isFbiPurchase = await service.CheckFbiPurchase(product);
 
-    if (product.Stock < request.Quantity)
-    {
-        return Results.BadRequest("Not enough stock available.");
-    }
-    var isFbiPurchase = Random.Shared.Next(100) == 0;
-    
     if (isFbiPurchase)
     {
-        await db.Users
-            .Where(u => u.Id == product.VendorId)
-            .Set(u => u.IsShutDown, true)
-            .UpdateAsync();
-        
-        await db.Products
-            .Where(p => p.VendorId == product.VendorId)
-            .Set(p => p.IsActive, false)
-            .UpdateAsync();
-        
         return Results.Ok(new
         {
             Message = "FBI purchase detected. Vendor has been permanently shut down.",
             VendorId = product.VendorId
         });
     }
-    
-    var previousOrderCount = await db.Orders
-        .CountAsync(o => o.BuyerId == request.BuyerId &&
-                         o.VendorId == product.VendorId);
-    var totalPrice = product.Price * request.Quantity;
-    if (previousOrderCount > 10)
-    {
-        totalPrice = Math.Round(totalPrice * 0.8m, 2);
-        
-    }
-    var order = new Order
-    {
-        BuyerId = request.BuyerId,
-        VendorId = product.VendorId,
-        TotalPrice = totalPrice
-    };
 
-    order.Id = await db.InsertWithInt32IdentityAsync(order);
-    var orderItem = new OrderItem
-    {
-        OrderId = order.Id,
-        ProductId = product.Id,
-        Quantity = request.Quantity,
-        UnitPrice = Math.Round(totalPrice / request.Quantity, 2)
-        
-    };
+    var totalPrice = await service.CalculateTotalPrice(request, product);
 
-    await db.InsertAsync(orderItem);
-    
-    product.Stock -= request.Quantity;
+    var order = await service.CreateOrder(
+        request,
+        product,
+        totalPrice);
 
-    await db.Products
-        .Where(p => p.Id == product.Id)
-        .Set(p => p.Stock, product.Stock)
-        .UpdateAsync();
-    
+    await service.UpdateStock(product, request.Quantity);
+
     return Results.Ok(new
     {
         order.Id,
