@@ -2,6 +2,7 @@ using LinqToDB;
 using LinqToDB.Async;
 using SatinRoad.Api.Data;
 using SatinRoad.Api.Models;
+using SatinRoad.Api.Services;
 
 
 
@@ -12,6 +13,7 @@ var connectionString = builder.Configuration.GetConnectionString("SatinRoad")
 
 builder.Services.AddScoped<SatinRoadDb>(_ =>
     new SatinRoadDb(connectionString));
+builder.Services.AddScoped<CategoryService>();
 
 // Add services to the container.
 builder.Services.AddOpenApi();
@@ -101,17 +103,15 @@ app.MapDelete("/api/products/{id:int}", async (int id, SatinRoadDb db) =>
 });
 
 //Category endpoints
-app.MapGet("/api/categories", async (SatinRoadDb db) =>
+app.MapGet("/api/categories", async (CategoryService service) =>
 {
-    var categories = await db.Categories.ToListAsync();
-
+    var categories = await service.GetAllCategories();
     return Results.Ok(categories);
 });
 
-app.MapGet("/api/categories/{id:int}", async (int id, SatinRoadDb db) =>
+app.MapGet("/api/categories/{id:int}", async (int id, CategoryService service) =>
 {
-    var category = await db.Categories
-        .FirstOrDefaultAsync(c => c.Id == id);
+    var category = await service.GetCategoryById(id);
 
     if (category == null)
     {
@@ -121,21 +121,18 @@ app.MapGet("/api/categories/{id:int}", async (int id, SatinRoadDb db) =>
     return Results.Ok(category);
 });
 
-app.MapPost("/api/categories", async (Category category, SatinRoadDb db) =>
+app.MapPost("/api/categories", async (Category category, CategoryService service) =>
 {
-    category.Id = await db.InsertWithInt32IdentityAsync(category);
+    var createdCategory = await service.CreateCategory(category);
 
-    return Results.Created($"/api/categories/{category.Id}", category);
+    return Results.Created($"/api/categories/{createdCategory.Id}", createdCategory);
 });
 
-app.MapPut("/api/categories/{id:int}", async (int id, Category updatedCategory, SatinRoadDb db) =>
+app.MapPut("/api/categories/{id:int}", async (int id, Category category, CategoryService service) =>
 {
-    var affectedRows = await db.Categories
-        .Where(c => c.Id == id)
-        .Set(c => c.Name, updatedCategory.Name)
-        .UpdateAsync();
+    var updated = await service.UpdateCategory(id, category);
 
-    if (affectedRows == 0)
+    if (!updated)
     {
         return Results.NotFound();
     }
@@ -143,13 +140,11 @@ app.MapPut("/api/categories/{id:int}", async (int id, Category updatedCategory, 
     return Results.NoContent();
 });
 
-app.MapDelete("/api/categories/{id:int}", async (int id, SatinRoadDb db) =>
+app.MapDelete("/api/categories/{id:int}", async (int id, CategoryService service) =>
 {
-    var affectedRows = await db.Categories
-        .Where(c => c.Id == id)
-        .DeleteAsync();
+    var deleted = await service.DeleteCategory(id);
 
-    if (affectedRows == 0)
+    if (!deleted)
     {
         return Results.NotFound();
     }
