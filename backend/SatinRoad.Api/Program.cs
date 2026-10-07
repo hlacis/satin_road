@@ -3,6 +3,7 @@ using LinqToDB.Async;
 using SatinRoad.Api.Data;
 using SatinRoad.Api.Models;
 using SatinRoad.Api.Services;
+using SatinRoad.Api.Results;
 
 
 
@@ -21,6 +22,9 @@ builder.Services.AddScoped<PurchaseService>();
 // Add services to the container.
 builder.Services.AddOpenApi();
 
+// Handles unexpected errors and returns a safe error response
+builder.Services.AddProblemDetails();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -28,9 +32,10 @@ if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
 }
-
 app.UseHttpsRedirection();
 
+// Handles unexpected exceptions globally
+app.UseExceptionHandler();
 
 // Product endpoints
 app.MapGet("/api/products", async (ProductService service) =>
@@ -54,25 +59,42 @@ app.MapGet("/api/products/{id:int}", async (int id, ProductService service) =>
 
 app.MapPost("/api/products", async (Product product, ProductService service) =>
 {
-    var createdProduct = await service.CreateProduct(product);
+    var result = await service.CreateProduct(product);
 
-    if (createdProduct == null)
+    if (result.Result == ProductResult.Invalid)
     {
-        return Results.BadRequest("Vendor not found or has been permanently shut down.");
+        return Results.BadRequest("Invalid product data.");
+    }
+    if (result.Result == ProductResult.VendorNotFound)
+    {
+        return Results.NotFound("Vendor not found or has been permanently shut down.");
     }
 
-    return Results.Created($"/api/products/{createdProduct.Id}", createdProduct);
+    if (result.Result == ProductResult.CategoryNotFound)
+    {
+        return Results.NotFound("Category not found.");
+    }
+    return Results.Created(
+        $"/api/products/{result.Product!.Id}",
+        result.Product);
 });
 
 app.MapPut("/api/products/{id:int}", async (int id, Product product, ProductService service) =>
 {
-    var updated = await service.UpdateProduct(id, product);
-
-    if (!updated)
+    var result = await service.UpdateProduct(id, product);
+    if (result == ProductResult.Invalid)
     {
-        return Results.NotFound();
+        return Results.BadRequest("Invalid product data.");
+    }
+    if (result == ProductResult.VendorNotFound)
+    {
+        return Results.NotFound("Vendor not found or has been permanently shut down.");
     }
 
+    if (result == ProductResult.CategoryNotFound)
+    {
+        return Results.NotFound("Category not found.");
+    }
     return Results.NoContent();
 });
 
@@ -109,18 +131,29 @@ app.MapGet("/api/categories/{id:int}", async (int id, CategoryService service) =
 
 app.MapPost("/api/categories", async (Category category, CategoryService service) =>
 {
-    var createdCategory = await service.CreateCategory(category);
+    var result = await service.CreateCategory(category);
 
-    return Results.Created($"/api/categories/{createdCategory.Id}", createdCategory);
+    if (result.Result == CategoryResult.Invalid)
+    {
+        return Results.BadRequest("Invalid category data.");
+    }
+
+    return Results.Created(
+        $"/api/categories/{result.Category!.Id}",
+        result.Category);
 });
 
 app.MapPut("/api/categories/{id:int}", async (int id, Category category, CategoryService service) =>
 {
-    var updated = await service.UpdateCategory(id, category);
+    var result = await service.UpdateCategory(id, category);
 
-    if (!updated)
+    if (result == CategoryResult.Invalid)
     {
-        return Results.NotFound();
+        return Results.BadRequest("Invalid category data.");
+    }
+    if (result == CategoryResult.NotFound)
+    {
+        return Results.NotFound("Category not found.");
     }
 
     return Results.NoContent();
@@ -141,14 +174,30 @@ app.MapDelete("/api/categories/{id:int}", async (int id, CategoryService service
 // Purchase endpoint
 app.MapPost("/api/purchases", async (PurchaseRequest request, PurchaseService service) =>
 {
-    var product = await service.GetAvailableProduct(
+    var isValidBuyer = await service.IsValidBuyer(request.BuyerId);
+
+    if (!isValidBuyer)
+    {
+        return Results.BadRequest("Buyer not found or has been permanently shut down.");
+    }
+    var result = await service.GetAvailableProduct(
         request.ProductId,
         request.Quantity);
 
-    if (product == null)
+    if (result.Result == PurchaseResult.ProductNotFound)
     {
-        return Results.BadRequest("Product is not available or there is not enough stock.");
+        return Results.NotFound("Product not found.");
     }
+    if (result.Result == PurchaseResult.InvalidQuantity)
+    {
+        return Results.BadRequest("Quantity must be greater than zero.");
+    }
+    if (result.Result == PurchaseResult.InsufficientStock)
+    {
+        return Results.BadRequest("Not enough stock available.");
+    }
+
+    var product = result.Product!;
 
     var isFbiPurchase = await service.CheckFbiPurchase(product);
 

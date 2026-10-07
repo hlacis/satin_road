@@ -2,6 +2,7 @@
 using LinqToDB.Async;
 using SatinRoad.Api.Data;
 using SatinRoad.Api.Models;
+using SatinRoad.Api.Results;
 
 namespace SatinRoad.Api.Services;
 
@@ -25,20 +26,40 @@ public class CategoryService
         return await _db.Categories
             .FirstOrDefaultAsync(c => c.Id == id);
     }
-    public async Task<Category> CreateCategory(Category category)
+    public async Task<(CategoryResult Result, Category? Category)> CreateCategory(Category category)
     {
+        // Validate basic category data
+        if (string.IsNullOrWhiteSpace(category.Name))
+        {
+            return (CategoryResult.Invalid, null);
+        }
         category.Id = await _db.InsertWithInt32IdentityAsync(category);
 
-        return category;
+        return (CategoryResult.Success, category);
     }
-    public async Task<bool> UpdateCategory(int id, Category category)
+    public async Task<CategoryResult> UpdateCategory(int id, Category category)
     {
+        // Validate basic category data
+        if (string.IsNullOrWhiteSpace(category.Name))
+        {
+            return CategoryResult.Invalid;
+        }
+
+        var existingCategory = await _db.Categories
+            .FirstOrDefaultAsync(c => c.Id == id);
+        if (existingCategory == null)
+        {
+            return CategoryResult.NotFound;
+        }
+
         var affectedRows = await _db.Categories
             .Where(c => c.Id == id)
             .Set(c => c.Name, category.Name)
             .UpdateAsync();
 
-        return affectedRows > 0;
+        return affectedRows > 0
+            ? CategoryResult.Success
+            : CategoryResult.NotFound;
     }
     public async Task<bool> DeleteCategory(int id)
     {
