@@ -1,5 +1,11 @@
-GET http://localhost:5234/api/categories
-
+GET http://localhost:5234/api/categories/9999
+###
+GET http://localhost:5234/api/products
+###
+GET http://localhost:5234/api/products/3
+###
+GET http://localhost:5234/api/products/9999
+###
 POST http://localhost:5234/api/products
 Content-Type: application/json
 
@@ -8,14 +14,44 @@ Content-Type: application/json
   "description": "Created through our API",
   "price": 149.99,
   "stock": 5,
-  "vendorId": 1,
+  "vendorId": 3,
   "categoryId": 1,
   "condition": "Used"
 }
 
+
+###
+POST http://localhost:5234/api/products
+Content-Type: application/json
+
+{
+  "name": "Invalid Test Product",
+  "description": "Testing validation",
+  "price": 50,
+  "stock": 10,
+  "vendorId": 1,
+  "categoryId": 1,
+  "condition": "New",
+  "isActive": true
+}
+
+###
+PUT http://localhost:5234/api/products/4
+Content-Type: application/json
+
+{
+  "name": "Validation Test Product",
+  "description": "Testing invalid vendor",
+  "price": 50,
+  "stock": 10,
+  "vendorId": 3,
+  "categoryId": 1,
+  "condition": "New",
+  "isActive": true
+}
 ###
 
-PUT http://localhost:5234/api/products/2
+PUT http://localhost:5234/api/products/6
 Content-Type: application/json
 
 {
@@ -29,8 +65,125 @@ Content-Type: application/json
 }
 
 ###
+PUT http://localhost:5234/api/categories/2
+Content-Type: application/json
 
+{
+  "name": ""
+}
+
+###
+PUT http://localhost:5234/api/categories/9999
+Content-Type: application/json
+
+{
+  "name": "Non Existing Category"
+}
+
+###
+PUT http://localhost:5234/api/categories/2
+Content-Type: application/json
+
+{
+  "name": "Updated Validation Category"
+}
+
+###
+POST http://localhost:5234/api/categories
+Content-Type: application/json
+
+{
+  "name": ""
+}
+
+###
+POST http://localhost:5234/api/purchases
+Content-Type: application/json
+
+{
+  "productId": 4,
+  "buyerId": 2,
+  "quantity": 1
+}
+
+###
+POST http://localhost:5234/api/purchases
+Content-Type: application/json
+
+{
+  "productId": 4,
+  "buyerId": 1,
+  "quantity": 1
+}
+
+###
+POST http://localhost:5234/api/categories
+Content-Type: application/json
+
+{
+  "name": "Validation Test Category"
+}
+
+###
+PUT http://localhost:5234/api/products/3
+Content-Type: application/json
+
+{
+  "name": "Invalid Update Test",
+  "description": "Testing validation",
+  "price": -10,
+  "stock": 10,
+  "vendorId": 3,
+  "categoryId": 1,
+  "condition": "New",
+  "isActive": true
+}
+
+###
+PUT http://localhost:5234/api/products/9999
+Content-Type: application/json
+
+{
+  "name": "Not Found Test",
+  "description": "Testing missing product",
+  "price": 50,
+  "stock": 10,
+  "vendorId": 3,
+  "categoryId": 1,
+  "condition": "New",
+  "isActive": true
+}
+
+###
+PUT http://localhost:5234/api/products/3
+Content-Type: application/json
+
+{
+  "name": "Updated Test Product",
+  "description": "Testing successful product update",
+  "price": 55,
+  "stock": 10,
+  "vendorId": 3,
+  "categoryId": 1,
+  "condition": "New",
+  "isActive": true
+}
+
+###
 DELETE http://localhost:5234/api/products/2
+
+###
+DELETE http://localhost:5234/api/categories/2
+
+###
+POST http://localhost:5234/api/purchases
+Content-Type: application/json
+
+{
+  "productId": 4,
+  "buyerId": 1,
+  "quantity": 1
+}
 
 ###
 POST http://localhost:5234/api/purchases
@@ -38,7 +191,7 @@ Content-Type: application/json
 
 {
   "buyerId": 2,
-  "productId": 1,
+  "productId": 3,
   "quantity": 2
 }
 

@@ -2,6 +2,7 @@
 using LinqToDB.Async;
 using SatinRoad.Api.Data;
 using SatinRoad.Api.Models;
+using SatinRoad.Api.Results;
 
 namespace SatinRoad.Api.Services;
 
@@ -13,22 +14,31 @@ public class PurchaseService
     {
         _db = db;
     }
-    public async Task<Product?> GetAvailableProduct(int productId, int quantity)
+    public async Task<(PurchaseResult Result, Product? Product)> GetAvailableProduct(int productId, int quantity)
     {
         var product = await _db.Products
             .FirstOrDefaultAsync(p => p.Id == productId);
 
         if (product == null || !product.IsActive)
         {
-            return null;
+            return (PurchaseResult.ProductNotFound, null);
         }
-
-        if (quantity <= 0 || product.Stock < quantity)
+        if (quantity <= 0)
         {
-            return null;
+            return (PurchaseResult.InvalidQuantity, null);
         }
+        if (product.Stock < quantity)
+        {
+            return (PurchaseResult.InsufficientStock, null);
+        }
+        return (PurchaseResult.Success, product);
+    }
+    public async Task<bool> IsValidBuyer(int buyerId)
+    {
+        var buyer = await _db.Users
+            .FirstOrDefaultAsync(u => u.Id == buyerId);
 
-        return product;
+        return buyer != null && !buyer.IsShutDown;
     }
     public async Task<bool> CheckFbiPurchase(Product product)
     {

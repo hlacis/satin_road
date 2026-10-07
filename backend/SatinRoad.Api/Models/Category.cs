@@ -5,7 +5,7 @@ namespace SatinRoad.Api.Models;
 [Table("Categories")]
 public class Category
 {
-    [Column("Id")]
+    [Column("Id"), Identity]
     public int Id { get; set; }
 
     [Column("Name")]

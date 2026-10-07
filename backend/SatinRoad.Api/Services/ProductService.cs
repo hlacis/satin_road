@@ -2,6 +2,7 @@
 using LinqToDB.Async;
 using SatinRoad.Api.Data;
 using SatinRoad.Api.Models;
+using SatinRoad.Api.Results;
 
 namespace SatinRoad.Api.Services;
 
@@ -26,22 +27,69 @@ public class ProductService
         return await _db.Products
             .FirstOrDefaultAsync(p => p.Id == id);
     }
-    public async Task<Product?> CreateProduct(Product product)
+    public async Task<(ProductResult Result, Product? Product)> CreateProduct(Product product)
     {
+        // Validate basic product data
+        if (string.IsNullOrWhiteSpace(product.Name) ||
+            product.Price < 0 ||
+            product.Stock < 0)
+        {
+            return (ProductResult.Invalid, null);
+        }
+
         var vendor = await _db.Users
             .FirstOrDefaultAsync(u => u.Id == product.VendorId);
 
         if (vendor == null || vendor.IsShutDown)
         {
-            return null;
+            return (ProductResult.VendorNotFound, null);
+        
+        }
+        var category = await _db.Categories
+            .FirstOrDefaultAsync(c => c.Id == product.CategoryId);
+
+        if (category == null)
+        {
+            return (ProductResult.CategoryNotFound, null);
         }
 
         product.Id = await _db.InsertWithInt32IdentityAsync(product);
 
-        return product;
+        return (ProductResult.Success, product);
     }
-    public async Task<bool> UpdateProduct(int id, Product product)
+    public async Task<ProductResult> UpdateProduct(int id, Product product)
     {
+        // Validate basic product data
+        if (string.IsNullOrWhiteSpace(product.Name) ||
+            product.Price < 0 ||
+            product.Stock < 0)
+        {
+            return ProductResult.Invalid;
+        }
+
+        var existingProduct = await _db.Products
+            .FirstOrDefaultAsync(p => p.Id == id);
+
+        if (existingProduct == null)
+        {
+            return ProductResult.NotFound;
+        }
+        var vendor = await _db.Users
+            .FirstOrDefaultAsync(u => u.Id == product.VendorId);
+
+        if (vendor == null || vendor.IsShutDown)
+        {
+            return ProductResult.VendorNotFound;
+        }
+
+        var category = await _db.Categories
+            .FirstOrDefaultAsync(c => c.Id == product.CategoryId);
+
+        if (category == null)
+        {
+            return ProductResult.CategoryNotFound;
+        }
+
         var affectedRows = await _db.Products
             .Where(p => p.Id == id)
             .Set(p => p.Name, product.Name)
@@ -53,7 +101,9 @@ public class ProductService
             .Set(p => p.Condition, product.Condition)
             .UpdateAsync();
 
-        return affectedRows > 0;
+        return affectedRows > 0
+            ? ProductResult.Success
+            : ProductResult.NotFound;
     }
     public async Task<bool> DeleteProduct(int id)
     {
