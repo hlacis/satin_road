@@ -8,4 +8,5 @@ export interface Product {
     categoryId: number
     condition: string
     isActive: boolean
+    imageUrl?: string | null
 }

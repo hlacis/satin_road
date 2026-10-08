@@ -17,3 +17,5 @@
 
 # macOS
 .DS_Store
+# Uploaded product images
+backend/SatinRoad.Api/wwwroot/uploads/

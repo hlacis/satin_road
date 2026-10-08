@@ -4,6 +4,8 @@ import type { Product } from './types/Product'
 import { Api } from './api/Api'
 import type { CartItem } from './types/CartItem'
 import Cart from './components/Cart'
+import Sell from './components/Sell'
+import ProductDetails from './components/ProductDetails'
 import './App.css'
 
 const api = new Api({
@@ -14,6 +16,8 @@ function App() {
   const [products, setProducts] = useState<Product[]>([])
   const [cart, setCart] = useState<CartItem[]>([])
   const [showCart, setShowCart] = useState(false)
+  const [showSell, setShowSell] = useState(false)
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
 
 
   useEffect(() => {
@@ -140,10 +144,28 @@ function App() {
           </div>
 
           <nav>
-            <a href="#">Marketplace</a>
-            <a href="#">Sell</a>
+            <a href="#" onClick={(e) => {
+              e.preventDefault()
+              setShowSell(false)
+            }}>
+              Marketplace
+            </a>
+
+            <a href="#" onClick={(e) => {
+              e.preventDefault()
+              setShowSell(true)
+              setShowCart(false)
+            }}>
+              Sell
+            </a>
+
             <a href="#">Orders</a>
-            <a href="#" onClick={() => setShowCart(!showCart)}>
+
+            <a href="#" onClick={(e) => {
+              e.preventDefault()
+              setShowSell(false)
+              setShowCart(!showCart)
+            }}>
               Cart ({cart.reduce((total, item) => total + item.quantity, 0)})
             </a>
           </nav>
@@ -154,6 +176,10 @@ function App() {
         </header>
 
         <main className="marketplace">
+          {showSell ? (
+              <Sell />
+          ) : (
+              <>
           <h1>Marketplace</h1>
           <p>Browse anonymous listings from vendors.</p>
           {showCart && (
@@ -165,15 +191,26 @@ function App() {
               />
           )}
 
-          <div className="product-grid">
-            {products.map(product => (
-                <ProductCard
-                    key={product.id}
-                    product={product}
-                    onAddToCart={handleAddToCart}
-                />
-            ))}
-          </div>
+                {selectedProduct ? (
+                    <ProductDetails
+                        product={selectedProduct}
+                        onBack={() => setSelectedProduct(null)}
+                        onAddToCart={handleAddToCart}
+                    />
+                ) : (
+                    <div className="product-grid">
+                      {products.map(product => (
+                          <ProductCard
+                              key={product.id}
+                              product={product}
+                              onAddToCart={handleAddToCart}
+                              onViewDetails={setSelectedProduct}
+                          />
+                      ))}
+                    </div>
+                )}
+              </>
+          )}
         </main>
       </>
   )

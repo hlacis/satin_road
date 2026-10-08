@@ -416,9 +416,10 @@ export class Api<
      * @request GET:/api/categories
      */
     categoriesList: (params: RequestParams = {}) =>
-      this.request<void, any>({
+      this.request<Category[], any>({
         path: `/api/categories`,
         method: "GET",
+        format: "json",
         ...params,
       }),
 

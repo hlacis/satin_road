@@ -99,6 +99,7 @@ public class ProductService
             .Set(p => p.VendorId, product.VendorId)
             .Set(p => p.CategoryId, product.CategoryId)
             .Set(p => p.Condition, product.Condition)
+            .Set(p => p.ImageUrl, product.ImageUrl)
             .UpdateAsync();
 
         return affectedRows > 0

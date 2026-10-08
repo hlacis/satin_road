@@ -4,6 +4,7 @@ using SatinRoad.Api.Data;
 using SatinRoad.Api.Models;
 using SatinRoad.Api.Services;
 using SatinRoad.Api.Results;
+using Microsoft.Extensions.FileProviders;
 
 
 
@@ -39,7 +40,16 @@ builder.Services.AddProblemDetails();
 
 var app = builder.Build();
 
+var webRoot = Path.Combine(app.Environment.ContentRootPath, "wwwroot");
+Directory.CreateDirectory(webRoot);
+
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new PhysicalFileProvider(webRoot)
+});
+
 app.UseCors("Frontend");
+
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
@@ -53,11 +63,12 @@ app.UseExceptionHandler();
 
 // Product endpoints
 app.MapGet("/api/products", async (ProductService service) =>
-{
-    var products = await service.GetAllProducts();
+    {
+        var products = await service.GetAllProducts();
 
-    return Results.Ok(products);
-});
+        return Results.Ok(products);
+    })
+    .Produces<List<Product>>(StatusCodes.Status200OK);
 
 app.MapGet("/api/products/{id:int}", async (int id, ProductService service) =>
 {
@@ -126,10 +137,11 @@ app.MapDelete("/api/products/{id:int}", async (int id, ProductService service) =
 
 // Category endpoints
 app.MapGet("/api/categories", async (CategoryService service) =>
-{
-    var categories = await service.GetAllCategories();
-    return Results.Ok(categories);
-});
+    {
+        var categories = await service.GetAllCategories();
+        return Results.Ok(categories);
+    })
+    .Produces<List<Category>>(StatusCodes.Status200OK);
 
 app.MapGet("/api/categories/{id:int}", async (int id, CategoryService service) =>
 {
@@ -244,5 +256,42 @@ app.MapPost("/api/purchases", async (PurchaseRequest request, PurchaseService se
         RemainingStock = product.Stock
     });
 });
+
+app.MapPost("/api/uploads", async (IFormFile file, IWebHostEnvironment environment) =>
+    {
+        var allowedTypes = new[] { "image/jpeg", "image/png", "image/webp" };
+
+        if (!allowedTypes.Contains(file.ContentType))
+            return Results.BadRequest("Only JPG, PNG and WebP images are allowed.");
+
+        if (file.Length == 0 || file.Length > 5 * 1024 * 1024)
+            return Results.BadRequest("Image must be between 1 byte and 5 MB.");
+
+        var extension = file.ContentType switch
+        {
+            "image/jpeg" => ".jpg",
+            "image/png" => ".png",
+            "image/webp" => ".webp",
+            _ => ""
+        };
+
+        var uploadsDirectory = Path.Combine(environment.ContentRootPath, "wwwroot", "uploads");
+
+        Directory.CreateDirectory(uploadsDirectory);
+
+        var fileName = $"{Guid.NewGuid()}{extension}";
+        var filePath = Path.Combine(uploadsDirectory, fileName);
+
+        await using (var stream = File.Create(filePath))
+        {
+            await file.CopyToAsync(stream);
+        }
+
+        return Results.Ok(new
+        {
+            imageUrl = $"/uploads/{fileName}"
+        });
+    })
+    .DisableAntiforgery();
 
 app.Run();
