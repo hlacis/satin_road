@@ -37,3 +37,9 @@ We used a Test Last approach. We implemented the functionality first and then id
 
 We focused on validation and business rules rather than aiming for 100% code coverage.
 
+## Sustainability
+
+We used Lighthouse to evaluate the application and considered performance, accessibility and sustainability when optimizing the frontend.
+
+We focused on keeping the application simple, avoiding unnecessary resources and optimizing the user experience.
+
