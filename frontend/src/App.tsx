@@ -7,6 +7,7 @@ import Cart from './components/Cart'
 import Sell from './components/Sell'
 import ProductDetails from './components/ProductDetails'
 import './App.css'
+import Orders from './components/Orders'
 
 const api = new Api({
   baseUrl: 'http://localhost:5234',
@@ -17,6 +18,7 @@ function App() {
   const [cart, setCart] = useState<CartItem[]>([])
   const [showCart, setShowCart] = useState(false)
   const [showSell, setShowSell] = useState(false)
+  const [showOrders, setShowOrders] = useState(false)
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
 
 
@@ -147,6 +149,7 @@ function App() {
             <a href="#" onClick={(e) => {
               e.preventDefault()
               setShowSell(false)
+              setShowOrders(false)
             }}>
               Marketplace
             </a>
@@ -155,15 +158,27 @@ function App() {
               e.preventDefault()
               setShowSell(true)
               setShowCart(false)
+              setShowOrders(false)
             }}>
               Sell
             </a>
 
-            <a href="#">Orders</a>
+            <a
+                href="#"
+                onClick={(e) => {
+                  e.preventDefault()
+                  setShowOrders(true)
+                  setShowSell(false)
+                  setShowCart(false)
+                }}
+            >
+              Orders
+            </a>
 
             <a href="#" onClick={(e) => {
               e.preventDefault()
               setShowSell(false)
+              setShowOrders(false)
               setShowCart(!showCart)
             }}>
               Cart ({cart.reduce((total, item) => total + item.quantity, 0)})
@@ -176,11 +191,13 @@ function App() {
         </header>
 
         <main className="marketplace">
-          {showSell ? (
-              <Sell />
-          ) : (
-              <>
-          <h1>Marketplace</h1>
+          {showOrders ? (
+            <Orders />
+        ) : showSell ? (
+            <Sell />
+        ) : (
+            <>
+              <h1>Marketplace</h1>
           <p>Browse anonymous listings from vendors.</p>
           {showCart && (
               <Cart

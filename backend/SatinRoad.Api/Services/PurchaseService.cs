@@ -3,6 +3,7 @@ using LinqToDB.Async;
 using SatinRoad.Api.Data;
 using SatinRoad.Api.Models;
 using SatinRoad.Api.Results;
+using SatinRoad.Api.Dtos;
 
 namespace SatinRoad.Api.Services;
 
@@ -98,6 +99,29 @@ public class PurchaseService
         await _db.InsertAsync(orderItem);
 
         return order;
+    }
+    public async Task<List<OrderHistoryDto>> GetOrdersForBuyer(int buyerId)
+    {
+        // Get order history together with the purchased product
+        return await (
+            from order in _db.Orders
+            join orderItem in _db.OrderItems
+                on order.Id equals orderItem.OrderId
+            join product in _db.Products
+                on orderItem.ProductId equals product.Id
+            where order.BuyerId == buyerId
+            orderby order.Id descending
+            select new OrderHistoryDto
+            {
+                OrderId = order.Id,
+                VendorId = order.VendorId,
+                ProductName = product.Name,
+                Quantity = orderItem.Quantity,
+                UnitPrice = orderItem.UnitPrice,
+                TotalPrice = order.TotalPrice,
+                OriginalUnitPrice = product.Price,
+            }
+        ).ToListAsync();
     }
     public async Task UpdateStock(Product product, int quantity)
     {

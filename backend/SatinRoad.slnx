@@ -1,3 +1,4 @@
 <Solution>
   <Project Path="SatinRoad.Api/SatinRoad.Api.csproj" />
+  <Project Path="SatinRoad.Tests/SatinRoad.Tests.csproj" />
 </Solution>
