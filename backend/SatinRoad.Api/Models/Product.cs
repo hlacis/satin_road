@@ -24,5 +24,7 @@ public class Product
     public string Condition { get; set; } = string.Empty;
     [Column]
     public bool IsActive { get; set; }
+    [Column("ImageUrl")]
+    public string? ImageUrl { get; set; }
     
 }

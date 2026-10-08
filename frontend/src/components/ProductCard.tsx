@@ -8,6 +8,8 @@ interface Product {
     categoryId: number
     condition: string
     isActive: boolean
+    imageUrl?: string | null
+    
 }
 
 interface ProductCardProps {
@@ -22,6 +24,14 @@ function ProductCard({ product, onAddToCart }: ProductCardProps) {
                 <span className="condition">{product.condition}</span>
                 <span className="stock">Stock: {product.stock}</span>
             </div>
+
+            {product.imageUrl && (
+                <img
+                    src={`http://localhost:5234${product.imageUrl}`}
+                    alt={product.name}
+                    className="product-image"
+                />
+            )}
 
             <h2>{product.name}</h2>
             <p className="description">{product.description}</p>
