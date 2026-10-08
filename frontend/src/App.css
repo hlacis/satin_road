@@ -319,7 +319,45 @@
 .sell-form > button:hover {
   background-color: #7c3aed;
 }
+.orders-page {
+  width: 100%;
+}
 
+.orders-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+  margin-top: 30px;
+}
+
+.order-card {
+  background: #151515;
+  border: 1px solid #2a2a2a;
+  border-radius: 12px;
+  padding: 24px;
+}
+
+.order-card h2 {
+  margin-top: 0;
+  margin-bottom: 20px;
+}
+
+.order-card p {
+  margin: 10px 0;
+}
+
+.order-total {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-top: 1px solid #2a2a2a;
+  margin-top: 20px;
+  padding-top: 16px;
+}
+
+.order-total strong {
+  font-size: 18px;
+}
 /* Mobile layout */
 
 @media (max-width: 700px) {
@@ -349,3 +387,4 @@
     gap: 24px;
   }
 }
+

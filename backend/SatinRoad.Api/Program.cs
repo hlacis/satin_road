@@ -197,6 +197,14 @@ app.MapDelete("/api/categories/{id:int}", async (int id, CategoryService service
     return Results.NoContent();
 });
 
+// Order endpoints
+app.MapGet("/api/orders/{buyerId:int}", async (int buyerId, PurchaseService service) =>
+{
+    var orders = await service.GetOrdersForBuyer(buyerId);
+
+    return Results.Ok(orders);
+});
+
 // Purchase endpoint
 app.MapPost("/api/purchases", async (PurchaseRequest request, PurchaseService service) =>
 {
@@ -256,7 +264,6 @@ app.MapPost("/api/purchases", async (PurchaseRequest request, PurchaseService se
         RemainingStock = product.Stock
     });
 });
-
 app.MapPost("/api/uploads", async (IFormFile file, IWebHostEnvironment environment) =>
     {
         var allowedTypes = new[] { "image/jpeg", "image/png", "image/webp" };
