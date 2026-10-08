@@ -166,6 +166,7 @@ function App() {
               e.preventDefault()
               setShowSell(false)
               setShowOrders(false)
+              setShowCart(false)
             }}>
               Marketplace
             </a>
@@ -195,7 +196,7 @@ function App() {
               e.preventDefault()
               setShowSell(false)
               setShowOrders(false)
-              setShowCart(!showCart)
+              setShowCart(true)
             }}>
               Cart ({cart.reduce((total, item) => total + item.quantity, 0)})
             </a>
@@ -207,8 +208,30 @@ function App() {
         </header>
 
         <main className="marketplace">
-          {showOrders ? (
-           <Orders />
+          {showCart ? (
+              <>
+                <h1>Shopping Cart</h1>
+
+                <button
+                    type="button"
+                    className="product-details-back"
+                    onClick={() => setShowCart(false)}
+                >
+                  ← Back to Marketplace
+                </button>
+                {cart.length === 0 ? (
+                    <p>Cart is currently empty.</p>
+                ) : (
+                    <Cart
+                        cart={cart}
+                        onIncrease={handleIncreaseQuantity}
+                        onDecrease={handleDecreaseQuantity}
+                        onCheckout={handleCheckout}
+                    />
+                )}
+              </>
+          ) : showOrders ? (
+              <Orders />
           ) : showSell ? (
               <>
                 <Sell
@@ -230,15 +253,6 @@ function App() {
               <>
                 <h1>Marketplace</h1>
                 <p>Browse anonymous listings from vendors.</p>
-
-                {showCart && (
-                    <Cart
-                        cart={cart}
-                        onIncrease={handleIncreaseQuantity}
-                        onDecrease={handleDecreaseQuantity}
-                        onCheckout={handleCheckout}
-                    />
-                )}
 
                 {selectedProduct ? (
                     <ProductDetails
