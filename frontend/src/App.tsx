@@ -5,6 +5,7 @@ import { Api } from './api/Api'
 import type { CartItem } from './types/CartItem'
 import Cart from './components/Cart'
 import Sell from './components/Sell'
+import ProductDetails from './components/ProductDetails'
 import './App.css'
 import Orders from './components/Orders'
 
@@ -18,6 +19,7 @@ function App() {
   const [showCart, setShowCart] = useState(false)
   const [showSell, setShowSell] = useState(false)
   const [showOrders, setShowOrders] = useState(false)
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
 
 
   useEffect(() => {
@@ -206,15 +208,24 @@ function App() {
               />
           )}
 
-          <div className="product-grid">
-            {products.map(product => (
-                <ProductCard
-                    key={product.id}
-                    product={product}
-                    onAddToCart={handleAddToCart}
-                />
-            ))}
-          </div>
+                {selectedProduct ? (
+                    <ProductDetails
+                        product={selectedProduct}
+                        onBack={() => setSelectedProduct(null)}
+                        onAddToCart={handleAddToCart}
+                    />
+                ) : (
+                    <div className="product-grid">
+                      {products.map(product => (
+                          <ProductCard
+                              key={product.id}
+                              product={product}
+                              onAddToCart={handleAddToCart}
+                              onViewDetails={setSelectedProduct}
+                          />
+                      ))}
+                    </div>
+                )}
               </>
           )}
         </main>
