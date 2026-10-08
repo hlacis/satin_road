@@ -8,6 +8,7 @@ import Sell from './components/Sell'
 import ProductDetails from './components/ProductDetails'
 import './App.css'
 import Orders from './components/Orders'
+import Admin from './components/Admin'
 
 const api = new Api({
   baseUrl: 'http://localhost:5234',
@@ -19,6 +20,7 @@ function App() {
   const [showCart, setShowCart] = useState(false)
   const [showSell, setShowSell] = useState(false)
   const [showOrders, setShowOrders] = useState(false)
+  const [showAdmin, setShowAdmin] = useState(false)
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
 
 
@@ -150,6 +152,7 @@ function App() {
               e.preventDefault()
               setShowSell(false)
               setShowOrders(false)
+              setShowAdmin(false)
             }}>
               Marketplace
             </a>
@@ -159,6 +162,7 @@ function App() {
               setShowSell(true)
               setShowCart(false)
               setShowOrders(false)
+              setShowAdmin(false)
             }}>
               Sell
             </a>
@@ -170,6 +174,7 @@ function App() {
                   setShowOrders(true)
                   setShowSell(false)
                   setShowCart(false)
+                  setShowAdmin(false)
                 }}
             >
               Orders
@@ -179,23 +184,40 @@ function App() {
               e.preventDefault()
               setShowSell(false)
               setShowOrders(false)
+              setShowAdmin(false)
               setShowCart(!showCart)
             }}>
               Cart ({cart.reduce((total, item) => total + item.quantity, 0)})
             </a>
           </nav>
-          
-          <button className="account-button">
-            Account
-          </button>
+
+          <div className="account-actions">
+            <button className="account-button">
+              Account
+            </button>
+
+            <button
+                className="account-button"
+                onClick={() => {
+                  setShowAdmin(true)
+                  setShowOrders(false)
+                  setShowSell(false)
+                  setShowCart(false)
+                }}
+            >
+              Admin
+            </button>
+          </div>
         </header>
 
         <main className="marketplace">
-          {showOrders ? (
-            <Orders />
-        ) : showSell ? (
-            <Sell />
-        ) : (
+          {showAdmin ? (
+              <Admin />
+          ) : showOrders ? (
+              <Orders />
+          ) : showSell ? (
+              <Sell />
+          ) : (
             <>
               <h1>Marketplace</h1>
           <p>Browse anonymous listings from vendors.</p>
