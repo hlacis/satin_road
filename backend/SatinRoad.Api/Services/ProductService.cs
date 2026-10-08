@@ -106,12 +106,15 @@ public class ProductService
             ? ProductResult.Success
             : ProductResult.NotFound;
     }
+    
     public async Task<bool> DeleteProduct(int id)
     {
         var affectedRows = await _db.Products
-            .Where(p => p.Id == id)
-            .DeleteAsync();
+            .Where(p => p.Id == id && p.IsActive)
+            .Set(p => p.IsActive, false)
+            .UpdateAsync();
 
         return affectedRows > 0;
     }
+
 }

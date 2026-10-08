@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from 'react'
 import ProductCard from './components/ProductCard'
 import type { Product } from './types/Product'
@@ -6,6 +7,7 @@ import type { CartItem } from './types/CartItem'
 import Cart from './components/Cart'
 import Sell from './components/Sell'
 import ProductDetails from './components/ProductDetails'
+import MyListings from './components/MyListings'
 import './App.css'
 import Orders from './components/Orders'
 
@@ -20,19 +22,32 @@ function App() {
   const [showSell, setShowSell] = useState(false)
   const [showOrders, setShowOrders] = useState(false)
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null)
 
+  const refreshProducts = async () => {
+    const response = await api.api.productsList()
+    const updatedProducts = response.data as Product[]
+
+    setProducts(updatedProducts)
+
+    setSelectedProduct(current =>
+        current
+            ? updatedProducts.find(product => product.id === current.id) ?? null
+            : null
+    )
+  }
 
   useEffect(() => {
-    api.api.productsList()
-        .then(response => {
-          setProducts(response.data as Product[])
-        })
-        .catch(error => {
-          console.error('Products API error:', error)
-        })
+    refreshProducts().catch(error => {
+      console.error('Products API error:', error)
+    })
   }, [])
-  
-  
+
+  const handleListingSaved = async () => {
+    await refreshProducts()
+    setEditingProduct(null)
+  }
+
   const handleAddToCart = (product: Product) => {
     setCart(currentCart => {
       if (currentCart.length === 0) {
@@ -61,6 +76,7 @@ function App() {
       return currentCart
     })
   }
+
   const handleIncreaseQuantity = (productId: number) => {
     setCart(currentCart =>
         currentCart.map(item =>
@@ -108,7 +124,7 @@ function App() {
       alert(message)
       return
     }
-    
+
     const data = await response.json()
 
     console.log('Purchase response:', data)
@@ -125,7 +141,7 @@ function App() {
 
       return
     }
-    
+
     setProducts(currentProducts =>
         currentProducts.map(product =>
             product.id === data.productId
@@ -133,11 +149,11 @@ function App() {
                 : product
         )
     )
-    
+
     setCart([])
     setShowCart(false)
   }
-  
+
   return (
       <>
         <header className="header">
@@ -184,7 +200,7 @@ function App() {
               Cart ({cart.reduce((total, item) => total + item.quantity, 0)})
             </a>
           </nav>
-          
+
           <button className="account-button">
             Account
           </button>
@@ -192,21 +208,37 @@ function App() {
 
         <main className="marketplace">
           {showOrders ? (
-            <Orders />
-        ) : showSell ? (
-            <Sell />
-        ) : (
-            <>
-              <h1>Marketplace</h1>
-          <p>Browse anonymous listings from vendors.</p>
-          {showCart && (
-              <Cart
-                  cart={cart}
-                  onIncrease={handleIncreaseQuantity}
-                  onDecrease={handleDecreaseQuantity}
-                  onCheckout={handleCheckout}
-              />
-          )}
+           <Orders />
+          ) : showSell ? (
+              <>
+                <Sell
+                    editingProduct={editingProduct}
+                    onSaved={handleListingSaved}
+                    onCancelEdit={() => setEditingProduct(null)}
+                />
+
+                <MyListings
+                    products={products}
+                    onEdit={setEditingProduct}
+                    onDeleted={async () => {
+                      await refreshProducts()
+                      setEditingProduct(null)
+                    }}
+                />
+              </>
+          ) : (
+              <>
+                <h1>Marketplace</h1>
+                <p>Browse anonymous listings from vendors.</p>
+
+                {showCart && (
+                    <Cart
+                        cart={cart}
+                        onIncrease={handleIncreaseQuantity}
+                        onDecrease={handleDecreaseQuantity}
+                        onCheckout={handleCheckout}
+                    />
+                )}
 
                 {selectedProduct ? (
                     <ProductDetails
