@@ -15,9 +15,12 @@ interface Product {
 interface ProductCardProps {
     product: Product
     onAddToCart: (product: Product) => void
+    onViewDetails: (product: Product) => void
+
 }
 
-function ProductCard({ product, onAddToCart }: ProductCardProps) {
+function ProductCard({ product, onAddToCart, onViewDetails }: ProductCardProps) {
+    
     return (
         <article className="product-card">
             <div className="product-card-top">
@@ -33,7 +36,15 @@ function ProductCard({ product, onAddToCart }: ProductCardProps) {
                 />
             )}
 
-            <h2>{product.name}</h2>
+            <h2>
+                <button
+                    type="button"
+                    className="product-title-button"
+                    onClick={() => onViewDetails(product)}
+                >
+                    {product.name}
+                </button>
+            </h2>
             <p className="description">{product.description}</p>
 
             <div className="product-card-bottom">
