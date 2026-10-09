@@ -8,9 +8,9 @@ import Cart from './components/Cart'
 import Sell from './components/Sell'
 import ProductDetails from './components/ProductDetails'
 import MyListings from './components/MyListings'
-import './App.css'
 import Orders from './components/Orders'
 import Admin from './components/Admin'
+import './App.css'
 
 const api = new Api({
   baseUrl: 'http://localhost:5234',
@@ -140,7 +140,6 @@ function App() {
 
       setCart([])
       setShowCart(false)
-
       return
     }
 
@@ -184,16 +183,13 @@ function App() {
               Sell
             </a>
 
-            <a
-                href="#"
-                onClick={(e) => {
-                  e.preventDefault()
-                  setShowOrders(true)
-                  setShowSell(false)
-                  setShowCart(false)
-                  setShowAdmin(false)
-                }}
-            >
+            <a href="#" onClick={(e) => {
+              e.preventDefault()
+              setShowOrders(true)
+              setShowSell(false)
+              setShowCart(false)
+              setShowAdmin(false)
+            }}>
               Orders
             </a>
 
@@ -202,7 +198,6 @@ function App() {
               setShowSell(false)
               setShowOrders(false)
               setShowAdmin(false)
-              setShowCart(!showCart)
               setShowCart(true)
             }}>
               Cart ({cart.reduce((total, item) => total + item.quantity, 0)})
@@ -231,29 +226,7 @@ function App() {
         <main className="marketplace">
           {showAdmin ? (
               <Admin />
-          ) : showOrders ? (
-              <Orders />
-          ) : showSell ? (
-              <Sell />
-          ) : (
-            <>
-              <h1>Marketplace</h1>
-          <p>Browse anonymous listings from vendors.</p>
-          {showCart && (
-              <Cart
-                  cart={cart}
-                  onIncrease={handleIncreaseQuantity}
-                  onDecrease={handleDecreaseQuantity}
-                  onCheckout={handleCheckout}
-              />
-          )}
-          <button className="account-button">
-            Account
-          </button>
-        </header>
-
-        <main className="marketplace">
-          {showCart ? (
+          ) : showCart ? (
               <>
                 <h1>Shopping Cart</h1>
 
@@ -264,6 +237,7 @@ function App() {
                 >
                   ← Back to Marketplace
                 </button>
+
                 {cart.length === 0 ? (
                     <p>Cart is currently empty.</p>
                 ) : (
