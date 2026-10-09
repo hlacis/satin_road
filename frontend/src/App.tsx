@@ -25,6 +25,7 @@ function App() {
   const [showAdmin, setShowAdmin] = useState(false)
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
   const [editingProduct, setEditingProduct] = useState<Product | null>(null)
+  const [searchQuery, setSearchQuery] = useState('')
 
   const refreshProducts = async () => {
     const response = await api.api.productsList()
@@ -270,8 +271,22 @@ function App() {
               </>
           ) : (
               <>
-                <h1>Marketplace</h1>
-                <p>Browse anonymous listings from vendors.</p>
+                <div className="marketplace-heading">
+                  <div>
+                    <h1>Marketplace</h1>
+                    <p>Browse anonymous listings from vendors.</p>
+                  </div>
+
+                  {!selectedProduct && (
+                      <input
+                          type="search"
+                          className="marketplace-search"
+                          placeholder="Search products..."
+                          value={searchQuery}
+                          onChange={(e) => setSearchQuery(e.target.value)}
+                      />
+                  )}
+                </div>
 
                 {selectedProduct ? (
                     <ProductDetails
@@ -281,7 +296,11 @@ function App() {
                     />
                 ) : (
                     <div className="product-grid">
-                      {products.map(product => (
+                      {products
+                          .filter(product =>
+                              product.name.toLowerCase().includes(searchQuery.toLowerCase().trim())
+                          )
+                          .map(product => (
                           <ProductCard
                               key={product.id}
                               product={product}
